@@ -12,4 +12,5 @@ dependencies = [
     "langchain-huggingface>=1.2.1",
     "langchain-text-splitters>=1.1.1",
     "sentence-transformers>=5.4.0",
+    "python-dotenv>=1.0.0",
 ]
