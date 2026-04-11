@@ -89,22 +89,20 @@ All documents are written in Norwegian and contain realistic details — budgets
 - **Git workflow:** Never push to main. Always use feature branches and PRs.
 - **Branch naming:** `feature/description` (e.g. `feature/rag-pipeline`)
 - **PR base:** Each PR builds on the previous one until merged.
-- **Dependencies:** Listed in `requirements.txt`. Use `pip install -r requirements.txt`.
-- **Virtual environment:** `python3 -m venv venv && source venv/bin/activate`
+- **Dependencies:** Managed with `uv`. Defined in `pyproject.toml`, locked in `uv.lock`. Run `uv sync` to install.
+- **Python version:** 3.11 (pinned in `.python-version`)
 
 ## Running the project
 
 ```bash
-# Setup
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+# Setup (using uv for dependency management)
+uv sync
 
 # Build the vector store (must run before the app)
-python src/rag_pipeline.py
+uv run python src/rag_pipeline.py
 
 # Run the app (Phase 3, when built)
-streamlit run app.py
+uv run streamlit run app.py
 ```
 
 ## What to keep in mind
