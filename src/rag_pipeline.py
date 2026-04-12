@@ -8,16 +8,17 @@ sentence-transformers, and stores in ChromaDB for retrieval.
 from pathlib import Path
 
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
 
 from .chunking import chunk_documents
 from .data_loader import load_documents
+from .vectorstore import create_vectorstore, load_vectorstore
 
 
 # Paths
 PROJECT_ROOT = Path(__file__).parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 CHROMA_DIR = PROJECT_ROOT / "vectorstore"
+COLLECTION_NAME = "agency_knowledge_base"
 
 # Embedding model — multilingual, runs locally, no API key needed
 EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
@@ -30,26 +31,6 @@ CHUNK_OVERLAP = 200
 def get_embeddings() -> HuggingFaceEmbeddings:
     """Initialize the embedding model."""
     return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
-
-
-def create_vectorstore(chunks: list, embeddings: HuggingFaceEmbeddings) -> Chroma:
-    """Create and persist a ChromaDB vector store from document chunks."""
-    vectorstore = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        persist_directory=str(CHROMA_DIR),
-        collection_name="agency_knowledge_base",
-    )
-    return vectorstore
-
-
-def load_vectorstore(embeddings: HuggingFaceEmbeddings) -> Chroma:
-    """Load an existing ChromaDB vector store from disk."""
-    return Chroma(
-        persist_directory=str(CHROMA_DIR),
-        embedding_function=embeddings,
-        collection_name="agency_knowledge_base",
-    )
 
 
 def build_vectorstore() -> Chroma:
@@ -66,7 +47,12 @@ def build_vectorstore() -> Chroma:
     embeddings = get_embeddings()
 
     print("Creating vector store...")
-    vectorstore = create_vectorstore(chunks, embeddings)
+    vectorstore = create_vectorstore(
+        chunks,
+        embeddings,
+        str(CHROMA_DIR),
+        COLLECTION_NAME,
+    )
     print(f"  Stored {vectorstore._collection.count()} vectors in {CHROMA_DIR}")
 
     return vectorstore
@@ -78,7 +64,11 @@ def query(question: str, k: int = 4) -> list:
     Useful for testing the retrieval without an LLM.
     """
     embeddings = get_embeddings()
-    vectorstore = load_vectorstore(embeddings)
+    vectorstore = load_vectorstore(
+        embeddings,
+        str(CHROMA_DIR),
+        COLLECTION_NAME,
+    )
     results = vectorstore.similarity_search(question, k=k)
     return results
 
