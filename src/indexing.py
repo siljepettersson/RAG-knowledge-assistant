@@ -8,7 +8,7 @@ from .embeddings import get_embeddings
 from .vectorstore import create_vectorstore
 
 
-def build_vectorstore(
+def index_documents(
     data_dir: Path,
     chroma_dir: Path,
     collection_name: str,

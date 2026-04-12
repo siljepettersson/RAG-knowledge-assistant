@@ -11,7 +11,7 @@ from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from .embeddings import get_embeddings
-from .pipeline import build_vectorstore
+from .indexing import index_documents
 from .vectorstore import create_vectorstore, load_vectorstore
 
 
@@ -44,8 +44,7 @@ def query(question: str, k: int = 4) -> list:
 
 
 if __name__ == "__main__":
-    # Build the vector store
-    vectorstore = build_vectorstore(
+    index_documents(
         DATA_DIR,
         CHROMA_DIR,
         COLLECTION_NAME,
