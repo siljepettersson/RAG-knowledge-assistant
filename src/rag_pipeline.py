@@ -7,10 +7,12 @@ sentence-transformers, and stores in ChromaDB for retrieval.
 
 from pathlib import Path
 
+from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from .chunking import chunk_documents
 from .data_loader import load_documents
+from .embeddings import get_embeddings
 from .vectorstore import create_vectorstore, load_vectorstore
 
 
@@ -28,9 +30,8 @@ CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 
 
-def get_embeddings() -> HuggingFaceEmbeddings:
-    """Initialize the embedding model."""
-    return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+
+
 
 
 def build_vectorstore() -> Chroma:
@@ -44,7 +45,7 @@ def build_vectorstore() -> Chroma:
     print(f"  Created {len(chunks)} chunks")
 
     print("Initializing embedding model...")
-    embeddings = get_embeddings()
+    embeddings = get_embeddings(EMBEDDING_MODEL)
 
     print("Creating vector store...")
     vectorstore = create_vectorstore(
@@ -63,7 +64,7 @@ def query(question: str, k: int = 4) -> list:
     Query the vector store and return relevant document chunks.
     Useful for testing the retrieval without an LLM.
     """
-    embeddings = get_embeddings()
+    embeddings = get_embeddings(EMBEDDING_MODEL)
     vectorstore = load_vectorstore(
         embeddings,
         str(CHROMA_DIR),
