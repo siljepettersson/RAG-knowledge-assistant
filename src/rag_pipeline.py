@@ -7,10 +7,11 @@ sentence-transformers, and stores in ChromaDB for retrieval.
 
 from pathlib import Path
 
-from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
+
+from .data_loader import load_documents
 
 
 # Paths
@@ -24,28 +25,6 @@ EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
 # Chunking settings
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
-
-
-def load_documents() -> list:
-    """Load all markdown documents from data/ directory."""
-    loader = DirectoryLoader(
-        str(DATA_DIR),
-        glob="**/*.md",
-        loader_cls=TextLoader,
-        loader_kwargs={"encoding": "utf-8"},
-    )
-    docs = loader.load()
-
-    # Add client name as metadata based on subfolder
-    for doc in docs:
-        path = Path(doc.metadata["source"])
-        # Get client folder name (e.g. "fjordmat", "spareklar")
-        relative = path.relative_to(DATA_DIR)
-        client = relative.parts[0]
-        doc.metadata["client"] = client
-        doc.metadata["filename"] = relative.name
-
-    return docs
 
 
 def chunk_documents(docs: list) -> list:
@@ -87,7 +66,7 @@ def load_vectorstore(embeddings: HuggingFaceEmbeddings) -> Chroma:
 def build_vectorstore() -> Chroma:
     """Full pipeline: load docs → chunk → embed → store. Returns the vector store."""
     print("Loading documents...")
-    docs = load_documents()
+    docs = load_documents(DATA_DIR)
     print(f"  Loaded {len(docs)} documents")
 
     print("Chunking documents...")
