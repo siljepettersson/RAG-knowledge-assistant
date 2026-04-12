@@ -10,9 +10,8 @@ from pathlib import Path
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from .chunking import chunk_documents
-from .data_loader import load_documents
 from .embeddings import get_embeddings
+from .indexing import index_documents
 from .vectorstore import create_vectorstore, load_vectorstore
 
 
@@ -28,36 +27,6 @@ EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
 # Chunking settings
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
-
-
-
-
-
-
-def build_vectorstore() -> Chroma:
-    """Full pipeline: load docs → chunk → embed → store. Returns the vector store."""
-    print("Loading documents...")
-    docs = load_documents(DATA_DIR)
-    print(f"  Loaded {len(docs)} documents")
-
-    print("Chunking documents...")
-    chunks = chunk_documents(docs, CHUNK_SIZE, CHUNK_OVERLAP)
-    print(f"  Created {len(chunks)} chunks")
-
-    print("Initializing embedding model...")
-    embeddings = get_embeddings(EMBEDDING_MODEL)
-
-    print("Creating vector store...")
-    vectorstore = create_vectorstore(
-        chunks,
-        embeddings,
-        str(CHROMA_DIR),
-        COLLECTION_NAME,
-    )
-    print(f"  Stored {vectorstore._collection.count()} vectors in {CHROMA_DIR}")
-
-    return vectorstore
-
 
 def query(question: str, k: int = 4) -> list:
     """
@@ -75,8 +44,14 @@ def query(question: str, k: int = 4) -> list:
 
 
 if __name__ == "__main__":
-    # Build the vector store
-    vectorstore = build_vectorstore()
+    index_documents(
+        DATA_DIR,
+        CHROMA_DIR,
+        COLLECTION_NAME,
+        EMBEDDING_MODEL,
+        CHUNK_SIZE,
+        CHUNK_OVERLAP,
+    )
 
     # Test queries
     test_questions = [
