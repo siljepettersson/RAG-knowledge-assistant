@@ -6,3 +6,6 @@ __pycache__/
 
 # Generated vector store
 vectorstore/
+
+# Environment variables — never commit real API keys
+.env
