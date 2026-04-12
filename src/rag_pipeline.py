@@ -7,10 +7,10 @@ sentence-transformers, and stores in ChromaDB for retrieval.
 
 from pathlib import Path
 
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
+from .chunking import chunk_documents
 from .data_loader import load_documents
 
 
@@ -25,17 +25,6 @@ EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
 # Chunking settings
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
-
-
-def chunk_documents(docs: list) -> list:
-    """Split documents into chunks for embedding."""
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE,
-        chunk_overlap=CHUNK_OVERLAP,
-        separators=["\n## ", "\n### ", "\n\n", "\n", " "],
-    )
-    chunks = splitter.split_documents(docs)
-    return chunks
 
 
 def get_embeddings() -> HuggingFaceEmbeddings:
@@ -70,7 +59,7 @@ def build_vectorstore() -> Chroma:
     print(f"  Loaded {len(docs)} documents")
 
     print("Chunking documents...")
-    chunks = chunk_documents(docs)
+    chunks = chunk_documents(docs, CHUNK_SIZE, CHUNK_OVERLAP)
     print(f"  Created {len(chunks)} chunks")
 
     print("Initializing embedding model...")
