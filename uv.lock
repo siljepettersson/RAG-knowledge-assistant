@@ -2535,6 +2535,7 @@ dependencies = [
     { name = "langchain-community" },
     { name = "langchain-huggingface" },
     { name = "langchain-text-splitters" },
+    { name = "python-dotenv" },
     { name = "sentence-transformers" },
 ]
 
@@ -2546,6 +2547,7 @@ requires-dist = [
     { name = "langchain-community", specifier = ">=0.4.1" },
     { name = "langchain-huggingface", specifier = ">=1.2.1" },
     { name = "langchain-text-splitters", specifier = ">=1.1.1" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "sentence-transformers", specifier = ">=5.4.0" },
 ]
 
