@@ -46,6 +46,18 @@ def format_source_list(retrieved_docs: list) -> list[str]:
     return [format_source_label(doc, i) for i, doc in enumerate(retrieved_docs, 1)]
 
 
+def build_prompt(question: str, context_block: str) -> str:
+    """Build a prompt-ready RAG input without calling an LLM."""
+    return (
+        "You are an internal knowledge assistant for a marketing agency.\n"
+        "Answer the user's question using only the provided context.\n"
+        "If the context does not contain enough information, say that clearly.\n"
+        "Reference the relevant source labels in your answer.\n\n"
+        f"Question:\n{question}\n\n"
+        f"Context:\n{context_block}"
+    )
+
+
 def run_indexing() -> None:
     """Rebuild the vector store from the current project documents."""
     index_documents(
@@ -79,6 +91,7 @@ def run_demo_queries() -> None:
         )
         sources = format_source_list(results)
         context_block = format_retrieved_context(results)
+        prompt = build_prompt(question, context_block)
 
         print(f"\nQ: {question}")
         print("Sources:")
@@ -86,6 +99,8 @@ def run_demo_queries() -> None:
             print(f"  - {source}")
         print("Context:")
         print(context_block)
+        print("Prompt:")
+        print(prompt)
 
 
 def main() -> None:
