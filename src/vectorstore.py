@@ -12,8 +12,11 @@ def create_vectorstore(
     collection_name: str,
 ) -> Chroma:
     """Create and persist a ChromaDB vector store from document chunks."""
+    chunk_ids = [chunk.metadata["chunk_id"] for chunk in chunks]
+
     return Chroma.from_documents(
         documents=chunks,
+        ids=chunk_ids,
         embedding=embeddings,
         persist_directory=persist_directory,
         collection_name=collection_name,
