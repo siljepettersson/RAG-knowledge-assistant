@@ -42,6 +42,7 @@ if __name__ == "__main__":
             embedding_device=config.embedding.device,
             normalize_embeddings=config.embedding.normalize_embeddings,
             embedding_batch_size=config.embedding.batch_size,
+            max_query_length=config.retrieval.max_query_length,
             k=2,
         )
         print(f"\nQ: {question}")
