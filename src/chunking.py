@@ -43,6 +43,20 @@ def split_markdown_text(text: str) -> list[str]:
     return units
 
 
+def clean_chunk_text_for_embedding(text: str) -> str:
+    """Normalize chunk text before embedding while preserving key content."""
+    text = text.replace("\u00a0", " ")
+    text = text.replace("\t", " ")
+    text = re.sub(r"\r\n?", "\n", text)
+    text = re.sub(r"[ ]{2,}", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = re.sub(r"^(#{1,6})\s*", "", text, flags=re.MULTILINE)
+    text = re.sub(r"^[-*+]\s+", "", text, flags=re.MULTILINE)
+    text = re.sub(r"^---+$", "", text, flags=re.MULTILINE)
+    text = re.sub(r"\n[ ]+", "\n", text)
+    return text.strip()
+
+
 def split_into_paragraph_groups(text: str, chunk_size: int) -> list[str]:
     """Group adjacent paragraphs until the target chunk size is reached."""
     paragraphs = [paragraph.strip() for paragraph in text.split("\n\n") if paragraph.strip()]
@@ -133,7 +147,7 @@ def chunk_documents(
             small_chunks = split_large_group(group, chunk_size, chunk_overlap)
 
             for chunk_text in small_chunks:
-                chunk_text = chunk_text.strip()
+                chunk_text = clean_chunk_text_for_embedding(chunk_text)
                 if len(chunk_text) < min_chunk_length:
                     continue
 
