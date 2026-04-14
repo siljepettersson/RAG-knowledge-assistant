@@ -5,7 +5,7 @@ from langchain_chroma import Chroma
 from .chunking import chunk_documents
 from .data_loader import load_documents
 from .embeddings import get_embeddings
-from .vectorstore import create_vectorstore
+from .vectorstore import rebuild_vectorstore
 
 
 def index_documents(
@@ -37,8 +37,8 @@ def index_documents(
         batch_size=embedding_batch_size,
     )
 
-    print("Creating vector store...")
-    vectorstore = create_vectorstore(
+    print("Rebuilding vector store from a clean state...")
+    vectorstore = rebuild_vectorstore(
         chunks,
         embeddings,
         str(chroma_dir),
