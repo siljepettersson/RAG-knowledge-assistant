@@ -1,16 +1,24 @@
 """
-RAG Pipeline for Agency Knowledge Base
+Phase 2 demo entrypoint for the agency knowledge base pipeline.
 
-Loads client documents from data/, chunks them, embeds with
-sentence-transformers, and stores in ChromaDB for retrieval.
+Running this module rebuilds the vector store from the current data directory
+and then executes a small set of demo retrieval queries.
 """
 
 from .config import config
 from .indexing import index_documents
 from .query import query
 
+DEMO_QUESTIONS = [
+    "Hva er Fjordmats tone of voice?",
+    "Hva var ROAS for Spareklars Google Ads i Q4 2024?",
+    "Hvilke influencere samarbeider Nordvik med?",
+    "Hvor mange ansatte har LogistikkPartner?",
+]
 
-if __name__ == "__main__":
+
+def run_indexing() -> None:
+    """Rebuild the vector store from the current project documents."""
     index_documents(
         config.paths.data_dir,
         config.paths.vectorstore_dir,
@@ -24,16 +32,11 @@ if __name__ == "__main__":
         config.chunking.min_chunk_length,
     )
 
-    # Test queries
-    test_questions = [
-        "Hva er Fjordmats tone of voice?",
-        "Hva var ROAS for Spareklars Google Ads i Q4 2024?",
-        "Hvilke influencere samarbeider Nordvik med?",
-        "Hvor mange ansatte har LogistikkPartner?",
-    ]
 
+def run_demo_queries() -> None:
+    """Run example retrieval queries against the rebuilt vector store."""
     print("\n--- Test Queries ---")
-    for question in test_questions:
+    for question in DEMO_QUESTIONS:
         results = query(
             question,
             config.paths.vectorstore_dir,
@@ -49,3 +52,13 @@ if __name__ == "__main__":
         for i, doc in enumerate(results, 1):
             print(f"  [{i}] {doc.metadata['client']}/{doc.metadata['filename']}")
             print(f"      {doc.page_content[:150].strip()}...")
+
+
+def main() -> None:
+    """Run the Phase 2 rebuild-and-query demo flow."""
+    run_indexing()
+    run_demo_queries()
+
+
+if __name__ == "__main__":
+    main()
