@@ -2,6 +2,11 @@ import re
 from copy import deepcopy
 
 
+def build_chunk_id(client: str, filename: str, chunk_index: int) -> str:
+    """Build a stable chunk identifier from document metadata and chunk order."""
+    return f"{client}/{filename}#chunk-{chunk_index}"
+
+
 def is_markdown_boundary_line(line: str) -> bool:
     """Return True when a line should be preserved as a standalone Markdown unit."""
     stripped = line.strip()
@@ -154,6 +159,11 @@ def chunk_documents(
                 chunk_doc = deepcopy(doc)
                 chunk_doc.page_content = chunk_text
                 chunk_doc.metadata["chunk_index"] = doc_chunk_index
+                chunk_doc.metadata["chunk_id"] = build_chunk_id(
+                    chunk_doc.metadata["client"],
+                    chunk_doc.metadata["filename"],
+                    doc_chunk_index,
+                )
                 all_chunks.append(chunk_doc)
                 doc_chunk_index += 1
 
