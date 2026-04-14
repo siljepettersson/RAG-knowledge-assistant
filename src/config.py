@@ -29,6 +29,7 @@ class EmbeddingConfig:
 class RetrievalConfig:
     collection_name: str = "agency_knowledge_base"
     top_k: int = 4
+    max_query_length: int = 1000
 
 
 @dataclass
