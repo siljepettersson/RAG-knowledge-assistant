@@ -20,7 +20,7 @@ if __name__ == "__main__":
         config.embedding.normalize_embeddings,
         config.chunking.chunk_size,
         config.chunking.chunk_overlap,
-        config.chunking.separators,
+        config.chunking.min_chunk_length,
     )
 
     # Test queries

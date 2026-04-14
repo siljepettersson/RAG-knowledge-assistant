@@ -14,7 +14,7 @@ class PathsConfig:
 class ChunkingConfig:
     chunk_size: int = 1000
     chunk_overlap: int = 200
-    separators: tuple[str, ...] = ("\n## ", "\n### ", "\n\n", "\n", " ")
+    min_chunk_length: int = 30
 
 
 @dataclass

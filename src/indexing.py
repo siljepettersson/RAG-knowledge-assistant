@@ -17,7 +17,7 @@ def index_documents(
     normalize_embeddings: bool,
     chunk_size: int,
     chunk_overlap: int,
-    separators: list[str] | tuple[str, ...],
+    min_chunk_length: int,
 ) -> Chroma:
     """Full pipeline: load docs, chunk, embed, and store."""
     print("Loading documents...")
@@ -25,7 +25,7 @@ def index_documents(
     print(f"  Loaded {len(docs)} documents")
 
     print("Chunking documents...")
-    chunks = chunk_documents(docs, chunk_size, chunk_overlap, separators)
+    chunks = chunk_documents(docs, chunk_size, chunk_overlap, min_chunk_length)
     print(f"  Created {len(chunks)} chunks")
 
     print("Initializing embedding model...")
