@@ -5,6 +5,21 @@ from .embeddings import get_embeddings
 from .vectorstore import load_vectorstore
 
 
+def validate_vectorstore_directory(chroma_dir: Path) -> None:
+    """Ensure the persisted vector store directory exists before querying."""
+    if not chroma_dir.exists() or not chroma_dir.is_dir():
+        raise FileNotFoundError(
+            f"Vector store directory not found: {chroma_dir}. "
+            "Build the index before querying."
+        )
+
+    if not any(chroma_dir.iterdir()):
+        raise FileNotFoundError(
+            f"Vector store directory is empty: {chroma_dir}. "
+            "Build the index before querying."
+        )
+
+
 def prepare_query_for_embedding(question: str, max_query_length: int) -> str:
     """Normalize and cap query text before embedding."""
     cleaned_question = question.replace("\u00a0", " ")
@@ -37,6 +52,7 @@ def query(
     if k < 1:
         raise ValueError("k must be at least 1.")
 
+    validate_vectorstore_directory(chroma_dir)
     prepared_question = prepare_query_for_embedding(question, max_query_length)
 
     embeddings = get_embeddings(
