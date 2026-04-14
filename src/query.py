@@ -9,10 +9,16 @@ def query(
     chroma_dir: Path,
     collection_name: str,
     embedding_model: str,
+    embedding_device: str = "cpu",
+    normalize_embeddings: bool = True,
     k: int = 4,
 ) -> list:
     """Query the vector store and return relevant document chunks."""
-    embeddings = get_embeddings(embedding_model)
+    embeddings = get_embeddings(
+        embedding_model,
+        device=embedding_device,
+        normalize_embeddings=normalize_embeddings,
+    )
     vectorstore = load_vectorstore(
         embeddings,
         str(chroma_dir),

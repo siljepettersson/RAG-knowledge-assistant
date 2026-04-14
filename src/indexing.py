@@ -13,8 +13,11 @@ def index_documents(
     chroma_dir: Path,
     collection_name: str,
     embedding_model: str,
+    embedding_device: str,
+    normalize_embeddings: bool,
     chunk_size: int,
     chunk_overlap: int,
+    separators: list[str] | tuple[str, ...],
 ) -> Chroma:
     """Full pipeline: load docs, chunk, embed, and store."""
     print("Loading documents...")
@@ -22,11 +25,15 @@ def index_documents(
     print(f"  Loaded {len(docs)} documents")
 
     print("Chunking documents...")
-    chunks = chunk_documents(docs, chunk_size, chunk_overlap)
+    chunks = chunk_documents(docs, chunk_size, chunk_overlap, separators)
     print(f"  Created {len(chunks)} chunks")
 
     print("Initializing embedding model...")
-    embeddings = get_embeddings(embedding_model)
+    embeddings = get_embeddings(
+        embedding_model,
+        device=embedding_device,
+        normalize_embeddings=normalize_embeddings,
+    )
 
     print("Creating vector store...")
     vectorstore = create_vectorstore(
