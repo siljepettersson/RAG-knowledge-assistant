@@ -18,6 +18,7 @@ if __name__ == "__main__":
         config.embedding.model_name,
         config.embedding.device,
         config.embedding.normalize_embeddings,
+        config.embedding.batch_size,
         config.chunking.chunk_size,
         config.chunking.chunk_overlap,
         config.chunking.min_chunk_length,
@@ -40,6 +41,7 @@ if __name__ == "__main__":
             config.embedding.model_name,
             embedding_device=config.embedding.device,
             normalize_embeddings=config.embedding.normalize_embeddings,
+            embedding_batch_size=config.embedding.batch_size,
             k=2,
         )
         print(f"\nQ: {question}")
