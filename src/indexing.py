@@ -15,6 +15,7 @@ def index_documents(
     embedding_model: str,
     embedding_device: str,
     normalize_embeddings: bool,
+    embedding_batch_size: int,
     chunk_size: int,
     chunk_overlap: int,
     min_chunk_length: int,
@@ -33,6 +34,7 @@ def index_documents(
         embedding_model,
         device=embedding_device,
         normalize_embeddings=normalize_embeddings,
+        batch_size=embedding_batch_size,
     )
 
     print("Creating vector store...")

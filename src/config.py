@@ -22,6 +22,7 @@ class EmbeddingConfig:
     model_name: str = "paraphrase-multilingual-MiniLM-L12-v2"
     device: str = "cpu"
     normalize_embeddings: bool = True
+    batch_size: int = 32
 
 
 @dataclass
