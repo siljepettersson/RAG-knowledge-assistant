@@ -2,9 +2,9 @@
 
 ## What is this project?
 
-This is a **demo/MVP for a job application**. The applicant (Silje Pettersson) is applying for an "AI-spesialist" position at **Moodgruppen**, a Norwegian marketing agency group consisting of Nettrafikk, Mood Communication, and Smood Social.
+This is a **demo/MVP**. 
 
-The challenge from Moodgruppen:
+The challenge:
 1. Describe what you'd prioritize building first as an AI developer at the agency, and why
 2. Build a simple MVP/demo/POC showing the idea in practice
 3. Write about approach, choices made, what you'd do with more time, and time spent
@@ -19,7 +19,7 @@ A marketing agency manages dozens of clients, each with brand guidelines, campai
 
 | Component | Choice | Why |
 |-----------|--------|-----|
-| Framework | LangChain | Industry standard for RAG, Silje has experience with it |
+| Framework | LangChain | Industry standard for RAG |
 | Vector DB | ChromaDB | Simple (pip install, no server), good for demos |
 | Embeddings | paraphrase-multilingual-MiniLM-L12-v2 | Runs locally, free, good Norwegian support |
 | UI | Streamlit | Quick to build, clean chat interface, easy to demo |
@@ -82,7 +82,7 @@ All documents are written in Norwegian and contain realistic details — budgets
 - Refactored into dedicated modules under `src/`
 - Tested: the indexing flow builds the vector store and the sample queries retrieve relevant documents
 
-### Phase 3: Streamlit UI (next)
+### Phase 3: Streamlit UI 
 - Chat interface where users ask questions about clients
 - LLM generates answers based on retrieved chunks
 - Show source documents with each answer
@@ -120,5 +120,5 @@ Do not rely on plain `python3 -m src.rag_pipeline` in the VM unless dependencies
 
 - This is an MVP/demo, not production code. Keep it clean but don't over-engineer.
 - The audience is a hiring manager at a marketing agency — the demo should be impressive but explainable.
-- Showing good RAG fundamentals (chunking strategy, source attribution, multilingual handling) matters more than flashy features.
-- The write-up is as important as the code — Moodgruppen explicitly asked for it.
+- Showing good RAG fundamentals matters more than flashy features.
+

@@ -17,6 +17,47 @@ DEMO_QUESTIONS = [
 ]
 
 
+def format_source_label(doc, source_number: int) -> str:
+    """Build a readable source label for prompt-ready context formatting."""
+    chunk_id = doc.metadata.get("chunk_id")
+
+    if not chunk_id:
+        client = doc.metadata["client"]
+        filename = doc.metadata["filename"]
+        chunk_index = doc.metadata["chunk_index"]
+        chunk_id = f"{client}/{filename}#chunk-{chunk_index}"
+
+    return f"[Source {source_number}] {chunk_id}"
+
+
+def format_retrieved_context(retrieved_docs: list) -> str:
+    """Format retrieved chunks into a stable, prompt-ready context block."""
+    sections: list[str] = []
+
+    for i, doc in enumerate(retrieved_docs, 1):
+        source_label = format_source_label(doc, i)
+        sections.append(f"{source_label}\n{doc.page_content.strip()}")
+
+    return "\n\n".join(sections)
+
+
+def format_source_list(retrieved_docs: list) -> list[str]:
+    """Return a compact source list for logging and later answer generation."""
+    return [format_source_label(doc, i) for i, doc in enumerate(retrieved_docs, 1)]
+
+
+def build_prompt(question: str, context_block: str) -> str:
+    """Build a prompt-ready RAG input without calling an LLM."""
+    return (
+        "You are an internal knowledge assistant for a marketing agency.\n"
+        "Answer the user's question using only the provided context.\n"
+        "If the context does not contain enough information, say that clearly.\n"
+        "Reference the relevant source labels in your answer.\n\n"
+        f"Question:\n{question}\n\n"
+        f"Context:\n{context_block}"
+    )
+
+
 def run_indexing() -> None:
     """Rebuild the vector store from the current project documents."""
     index_documents(
@@ -48,10 +89,18 @@ def run_demo_queries() -> None:
             max_query_length=config.retrieval.max_query_length,
             k=2,
         )
+        sources = format_source_list(results)
+        context_block = format_retrieved_context(results)
+        prompt = build_prompt(question, context_block)
+
         print(f"\nQ: {question}")
-        for i, doc in enumerate(results, 1):
-            print(f"  [{i}] {doc.metadata['client']}/{doc.metadata['filename']}")
-            print(f"      {doc.page_content[:150].strip()}...")
+        print("Sources:")
+        for source in sources:
+            print(f"  - {source}")
+        print("Context:")
+        print(context_block)
+        print("Prompt:")
+        print(prompt)
 
 
 def main() -> None:
