@@ -1,6 +1,6 @@
 # RAG Knowledge Assistant
 
-This repository is a demo RAG project for a job application. The idea is an internal client knowledge assistant for a marketing agency: agency employees can search client material such as brand guidelines, campaign briefs, reports, and strategy documents and retrieve relevant source-backed context.
+This repository is a demo RAG project. The idea is an internal client knowledge assistant for a marketing agency: agency employees can search client material such as brand guidelines, campaign briefs, reports, and strategy documents and retrieve relevant source-backed context.
 
 The project currently delivers a solid Phase 2 retrieval pipeline and a pre-LLM orchestration layer. It can:
 
@@ -83,20 +83,20 @@ Document types include:
 - `paraphrase-multilingual-MiniLM-L12-v2`
 - `uv` for dependency management
 
-Dependencies are defined in [`pyproject.toml`].
+Dependencies are defined in `pyproject.toml`.
 
 ## How The Pipeline Works
 
 ### 1. Load Documents
 
-[`src/data_loader.py`]loads Markdown files from `data/` and attaches document metadata:
+`src/data_loader.py` loads Markdown files from `data/` and attaches document metadata:
 
 - `client`
 - `filename`
 
 ### 2. Chunk Documents
 
-[`src/chunking.py`] performs custom chunking with a few practical improvements:
+`src/chunking.py` performs custom chunking with a few practical improvements:
 
 - paragraph-aware grouping
 - sentence-like splitting for oversized sections
@@ -104,7 +104,7 @@ Dependencies are defined in [`pyproject.toml`].
 - chunk text cleanup before embedding
 - stable chunk identity via `chunk_id`
 
-Relevant defaults from [`src/config.py`]:
+Relevant defaults from `src/config.py`:
 
 - `chunk_size = 1000`
 - `chunk_overlap = 200`
@@ -112,7 +112,7 @@ Relevant defaults from [`src/config.py`]:
 
 ### 3. Build Embeddings
 
-[`src/embeddings.py`] initializes a cached embedding client. Current embedding-related improvements include:
+`src/embeddings.py` initializes a cached embedding client. Current embedding-related improvements include:
 
 - cached client creation with `lru_cache`
 - `batch_size` support
@@ -128,9 +128,9 @@ Current embedding config:
 
 ### 4. Rebuild The Vector Store
 
-[`src/indexing.py`]orchestrates the indexing flow.
+`src/indexing.py` orchestrates the indexing flow.
 
-[`src/vectorstore.py`]now uses a **rebuild-style** approach:
+`src/vectorstore.py` now uses a **rebuild-style** approach:
 
 - existing persisted vector data is removed
 - the Chroma store is recreated from the current document set
@@ -139,7 +139,7 @@ This is intentional. The current project is a full rebuild pipeline, not an incr
 
 ### 5. Query The Store
 
-[`src/query.py`]retrieves relevant chunks from the vector store and includes guardrails for:
+`src/query.py` retrieves relevant chunks from the vector store and includes guardrails for:
 
 - empty queries
 - invalid `k`
@@ -149,7 +149,7 @@ This is intentional. The current project is a full rebuild pipeline, not an incr
 
 ### 6. Build Prompt-Ready Context
 
-[`src/rag_pipeline.py`]currently acts as the Phase 2 demo entrypoint and includes a lightweight pre-LLM orchestration layer:
+`src/rag_pipeline.py` currently acts as the Phase 2 demo entrypoint and includes a lightweight pre-LLM orchestration layer:
 
 - `format_source_label(...)`
 - `format_source_list(...)`
@@ -168,9 +168,9 @@ It does **not** call an LLM yet.
 
 The project now uses one consistent chunk identity through the pipeline:
 
-1. [`src/chunking.py`]defines `chunk_id`
-2. [`src/vectorstore.py`]stores vectors using that same `chunk_id`
-3. [`src/rag_pipeline.py`]displays the same `chunk_id` in source labels
+1. `src/chunking.py` defines `chunk_id`
+2. `src/vectorstore.py` stores vectors using that same `chunk_id`
+3. `src/rag_pipeline.py` displays the same `chunk_id` in source labels
 
 Example source label:
 
@@ -258,4 +258,3 @@ The most natural next steps from the current codebase are:
 
 - Documents are in Norwegian.
 - Code and comments are in English.
-- The current implementation is aimed at a clean, explainable MVP rather than production complexity.
