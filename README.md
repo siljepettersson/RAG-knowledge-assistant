@@ -2,6 +2,54 @@
 
 This repository is a demo RAG project. The idea is an internal client knowledge assistant for a marketing agency: agency employees can search client material such as brand guidelines, campaign briefs, reports, and strategy documents and retrieve relevant source-backed context.
 
+![RAG pipeline flow](assets/rag-pipeline-flow.png)
+
+RAG flow: prepare knowledge documents, split them into chunks, convert those chunks into embeddings, store the vector representations with their text and metadata, retrieve the most relevant chunks for a user query, and use the retrieved context for answer generation.
+
+## Workflow Explained
+
+### 1. Background Preparation: Data Ingestion
+
+**Step 1. Ingestion and Chunking**
+
+Raw knowledge documents are loaded, cleaned, enriched with metadata, and split into smaller text chunks that can be retrieved later.
+
+**Step 2. Embedding Model**
+
+Each text chunk is converted into a vector representation that captures its semantic meaning.
+
+**Step 3. Vector Database**
+
+The chunk vectors are stored in the vector database together with their original text and metadata.
+
+### 2. User Interaction: Retrieval and Generation
+
+**Step 4. Semantic Search Query**
+
+The user's question is converted into a query vector and compared against the stored chunk vectors to find the most relevant context.
+
+**Retrieval Engine**
+
+**Step 5. Augmented Generation**
+
+The retrieved context and the user question are combined into a prompt that an LLM can use to generate a grounded answer.
+
+### 3. Memory Buffer
+
+Memory can support this in several ways:
+
+- **Storage:** after each answer, the conversation or a summary of it can be stored in memory.
+- **Feedback loop:** when the next question arrives, relevant memory can be retrieved and combined with the new question.
+- **Query rewriting:** a vague follow-up like "How do I apply for it?" can be rewritten as "How do I apply for vacation?"
+- **Looped retrieval:** the clarified query can then be used to retrieve better knowledge base context.
+
+Common memory types include:
+
+- **Short-term memory:** remembers the last few conversation turns to keep the current dialogue coherent.
+- **Long-term memory:** stores persistent preferences or facts across sessions, such as a user's preferred answer style.
+
+Memory is not implemented in this project yet, but it is part of the larger target architecture shown in the diagram.
+
 The project currently delivers a solid Phase 2 retrieval pipeline and a pre-LLM orchestration layer. It can:
 
 - load fictional client documents from `data/`
