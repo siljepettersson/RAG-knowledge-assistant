@@ -2,7 +2,7 @@
 
 ## What is this project?
 
-This is a **demo/MVP**. 
+This project started as a **demo/MVP**, but the current direction is to evolve it into a stronger RAG assistant demo with a real UI, LLM-generated answers, source citations, retrieval trace, and clear extension points for advanced retrieval.
 
 The challenge:
 1. Describe what you'd prioritize building first as an AI developer at the agency, and why
@@ -82,12 +82,91 @@ All documents are written in Norwegian and contain realistic details — budgets
 - Refactored into dedicated modules under `src/`
 - Tested: the indexing flow builds the vector store and the sample queries retrieve relevant documents
 
-### Phase 3: Streamlit UI 
+### Phase 3: LLM + Streamlit UI
 - Chat interface where users ask questions about clients
 - LLM generates answers based on retrieved chunks
 - Show source documents with each answer
-- Client filter in sidebar (optional)
-- **LLM choice not yet decided** — options: OpenAI, Anthropic, or local model
+- Show retrieval trace so the demo explains how the answer was grounded
+- Client filter in sidebar
+- Keep `app.py` thin: UI only, no direct Chroma/vectorstore/prompt orchestration logic
+- Add structured response objects so retrieval and answer generation can evolve without changing the UI contract
+- **LLM choice not yet decided** — options: OpenAI-compatible API, Anthropic, or local model
+
+### Phase 3 Architecture Rules
+- `app.py` should only handle Streamlit layout, session state, user input, and display.
+- Do not put vector store loading, embedding setup, prompt construction, or LLM provider details directly in `app.py`.
+- Put high-level orchestration in a dedicated module such as `src/assistant.py`.
+- Put structured dataclasses or response schemas in a dedicated module such as `src/schemas.py`.
+- Keep low-level retrieval in `src/query.py` or a retrieval-specific module.
+- Keep prompt/source formatting utilities reusable from `src/rag_pipeline.py` unless they need to be split later.
+- Put LLM API handling in a dedicated module such as `src/llm.py`.
+
+Recommended Phase 3 flow:
+
+```text
+app.py
+    -> src.assistant.answer_question(...)
+        -> retrieve context
+        -> build prompt
+        -> generate LLM answer
+        -> return structured AssistantResponse
+```
+
+The retrieval result should not be only a raw `list[Document]` or a plain string. Use a structured object that can grow over time.
+
+Initial retrieved-context fields:
+- `question`
+- `retrieved_chunks`
+- `source_labels`
+- `context_block`
+- `client_filter_used`
+- `retrieval_notes`
+
+Initial assistant-response fields:
+- `question`
+- `status`
+- `answer`
+- `sources`
+- `retrieved_context`
+- `prompt`
+- `model_name`
+- `error`
+
+Include response status from the first implementation so the UI can branch cleanly. Suggested statuses:
+- `answered`: retrieval and LLM generation both succeeded
+- `retrieval_only`: retrieval worked, but no LLM was configured, so the app shows retrieved context or a prompt-ready fallback
+- `no_results`: retrieval returned no useful context
+- `configuration_error`: required settings such as an LLM API key or base URL are missing or invalid
+- `runtime_error`: an unexpected error happened during retrieval or generation
+
+Response contract conventions:
+- Normalize UI client filter values before low-level retrieval. Retrieval functions should receive either `None` or a real client slug such as `fjordmat`; never pass display labels like `All clients`.
+- `RetrievedContext.source_labels` are retrieval-produced labels for retrieved chunks.
+- `AssistantResponse.sources` is the final UI-facing source list for the answer. It can initially mirror `source_labels`, but later may contain only sources used in the final answer.
+- `RetrievedContext.retrieved_chunks` may contain LangChain `Document` objects internally, but `app.py` should not depend on detailed `Document.metadata` structure.
+- `AssistantResponse.prompt` should store the full prompt for trace/debug. The UI can hide it by default or show a preview.
+
+Future fields can include:
+- `rewritten_queries`
+- `subqueries`
+- `rerank_scores`
+- `evidence_status`
+- `retrieval_rounds`
+- `confidence`
+
+### Advanced Retrieval Direction
+- The embedding model remains responsible for vector representations.
+- The LLM should first be used for answer generation.
+- Later, the LLM can act as a retrieval controller on top of vector search.
+- Advanced retrieval should be added behind the assistant/retrieval boundary, not inside the UI.
+
+Planned advanced retrieval capabilities:
+- query understanding: infer client, document type, and answer type
+- query rewriting: make vague user questions searchable
+- multi-query retrieval: split complex questions into several searches
+- multi-hop retrieval: gather evidence from multiple documents
+- reranking: prioritize chunks that best support the answer
+- evidence sufficiency checks: decide whether the context is enough before answering
 
 ### Phase 4: Write-up (last)
 - README.md with: what was built, why, approach, choices, what to improve, time spent
@@ -118,7 +197,8 @@ Do not rely on plain `python3 -m src.rag_pipeline` in the VM unless dependencies
 
 ## What to keep in mind
 
-- This is an MVP/demo, not production code. Keep it clean but don't over-engineer.
+- This is a demo project, but do not restrict the architecture to a throwaway MVP. Keep it clean, explainable, and ready for advanced retrieval.
 - The audience is a hiring manager at a marketing agency — the demo should be impressive but explainable.
-- Showing good RAG fundamentals matters more than flashy features.
-
+- Showing good RAG fundamentals still matters more than flashy features.
+- Favor clear module boundaries over putting everything into `app.py`.
+- Prefer structured return objects over loosely passing strings and raw document lists between layers.

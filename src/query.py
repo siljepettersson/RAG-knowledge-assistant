@@ -47,6 +47,7 @@ def query(
     embedding_batch_size: int = 32,
     max_query_length: int = 1000,
     k: int = 4,
+    client_filter: str | None = None,
 ) -> list:
     """Query the vector store and return relevant document chunks."""
     if k < 1:
@@ -66,4 +67,12 @@ def query(
         str(chroma_dir),
         collection_name,
     )
+
+    if client_filter:
+        return vectorstore.similarity_search(
+            prepared_question,
+            k=k,
+            filter={"client": client_filter},
+        )
+
     return vectorstore.similarity_search(prepared_question, k=k)
