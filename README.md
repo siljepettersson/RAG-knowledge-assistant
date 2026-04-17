@@ -1,10 +1,14 @@
 # RAG Knowledge Assistant
 
-This repository is a demo RAG project. The idea is an internal client knowledge assistant for a marketing agency: agency employees can search client material such as brand guidelines, campaign briefs, reports, and strategy documents and retrieve relevant source-backed context.
+This repository is a RAG project for an internal client knowledge assistant at a marketing agency. Agency employees can search client material such as brand guidelines, campaign briefs, reports, and strategy documents and retrieve relevant source-backed context.
+
+The project started as a compact proof of concept, but the current direction is to turn the baseline retrieval pipeline into a usable assistant with a Streamlit chat UI, LLM-generated answers, source citations, and an architecture that can later support more advanced retrieval behavior.
 
 ![RAG pipeline flow](assets/rag-pipeline-flow.png)
 
 RAG flow: prepare knowledge documents, split them into chunks, convert those chunks into embeddings, store the vector representations with their text and metadata, retrieve the most relevant chunks for a user query, and use the retrieved context for answer generation.
+
+The current baseline uses a local embedding model for vector search. The LLM will be added in the answer-generation layer first, not as a replacement for embeddings. Later, the LLM can also help with retrieval planning, query rewriting, reranking, and evidence checks.
 
 ## Workflow Explained
 
@@ -61,6 +65,100 @@ The project currently delivers a solid Phase 2 retrieval pipeline and a pre-LLM 
 
 It does **not** yet include a Streamlit UI or final answer generation from an LLM.
 
+## Phase 3 Direction
+
+The next phase is to add the user-facing assistant layer while keeping the code ready for more advanced retrieval later.
+
+The main design rule for Phase 3:
+
+- `app.py` should stay thin and only handle UI concerns
+- retrieval, prompt construction, LLM calls, source formatting, and response objects should live in `src/`
+- the app should display answers, source citations, and a retrieval trace, but it should not know Chroma or embedding details
+
+Planned Phase 3 structure:
+
+```text
+app.py
+    ↓
+src.assistant.answer_question(...)
+    ↓
+retrieve context
+    ↓
+build prompt
+    ↓
+generate LLM answer
+    ↓
+return structured response
+```
+
+The retrieval result should be structured from the beginning instead of returning only raw documents or a plain context string. The first version can include:
+
+- `question`
+- `retrieved_chunks`
+- `source_labels`
+- `context_block`
+- `client_filter_used`
+- `retrieval_notes`
+
+The assistant response can include:
+
+- `question`
+- `status`
+- `answer`
+- `sources`
+- `retrieved_context`
+- `prompt`
+- `model_name`
+- `error`
+
+The `status` field should be included from the first version so the UI can decide how to present the result. Expected initial statuses:
+
+- `answered`: retrieval and LLM generation both succeeded
+- `retrieval_only`: retrieval worked, but no LLM was configured, so the app shows retrieved context or a prompt-ready fallback
+- `no_results`: retrieval returned no useful context
+- `configuration_error`: required settings such as an LLM API key or base URL are missing or invalid
+- `runtime_error`: an unexpected error happened during retrieval or generation
+
+This gives the app a stable data contract. Future retrieval upgrades can add fields such as:
+
+- `rewritten_queries`
+- `subqueries`
+- `rerank_scores`
+- `evidence_status`
+- `retrieval_rounds`
+- `confidence`
+
+## Future Advanced Retrieval Direction
+
+After Phase 3 is working, the baseline retrieval can be upgraded without rewriting the UI.
+
+Potential advanced retrieval layers:
+
+- query understanding: identify client, document type, and answer type
+- query rewriting: turn vague questions into searchable questions
+- multi-query retrieval: split complex questions into several searches
+- multi-hop retrieval: gather evidence from multiple related documents
+- reranking: prioritize the chunks that best support the answer
+- evidence sufficiency checks: decide whether the retrieved context is enough
+
+The LLM should not replace the embedding model. Instead, it can act as a retrieval controller on top of the local vector search:
+
+```text
+User question
+    ↓
+Question understanding
+    ↓
+Query planning
+    ↓
+Vector retrieval
+    ↓
+Reranking / evidence selection
+    ↓
+Evidence sufficiency check
+    ↓
+Answer generation with citations
+```
+
 ## Current Status
 
 Implemented now:
@@ -75,6 +173,8 @@ Not implemented yet:
 
 - `app.py` / Streamlit UI
 - LLM answer generation
+- structured assistant response objects
+- retrieval trace for the UI
 - hybrid local + web retrieval
 
 ## Project Structure
@@ -296,11 +396,13 @@ Query guardrails also fail early with clear errors for:
 
 The most natural next steps from the current codebase are:
 
-1. connect an LLM to the already-built prompt construction flow
-2. add `app.py` with a Streamlit chat interface
-3. show answer text together with source citations
-4. optionally add client filtering in the UI
-5. optionally explore hybrid retrieval later
+1. add structured response objects for retrieved context and assistant answers
+2. add an LLM generation module with graceful fallback when no API key is configured
+3. add an assistant orchestration layer so `app.py` stays thin
+4. add `app.py` with a Streamlit chat interface
+5. show answer text, source citations, and retrieval trace
+6. add client filtering in the UI
+7. later upgrade retrieval with query planning, reranking, and evidence checks
 
 ## Notes
 
