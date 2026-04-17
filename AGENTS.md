@@ -139,6 +139,13 @@ Include response status from the first implementation so the UI can branch clean
 - `configuration_error`: required settings such as an LLM API key or base URL are missing or invalid
 - `runtime_error`: an unexpected error happened during retrieval or generation
 
+Response contract conventions:
+- Normalize UI client filter values before low-level retrieval. Retrieval functions should receive either `None` or a real client slug such as `fjordmat`; never pass display labels like `All clients`.
+- `RetrievedContext.source_labels` are retrieval-produced labels for retrieved chunks.
+- `AssistantResponse.sources` is the final UI-facing source list for the answer. It can initially mirror `source_labels`, but later may contain only sources used in the final answer.
+- `RetrievedContext.retrieved_chunks` may contain LangChain `Document` objects internally, but `app.py` should not depend on detailed `Document.metadata` structure.
+- `AssistantResponse.prompt` should store the full prompt for trace/debug. The UI can hide it by default or show a preview.
+
 Future fields can include:
 - `rewritten_queries`
 - `subqueries`
