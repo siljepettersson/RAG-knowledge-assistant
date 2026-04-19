@@ -101,6 +101,10 @@ All documents are written in Norwegian and contain realistic details — budgets
 - Keep prompt/source formatting utilities reusable from `src/rag_pipeline.py` unless they need to be split later.
 - Put LLM API handling in a dedicated module such as `src/llm.py`.
 
+`src/assistant.py` is the public assistant service boundary for UI callers. It should expose a small stable API such as `answer_question(...)` and coordinate retrieval, prompt building, LLM generation, and response-status mapping. It exists so `app.py` can stay focused on Streamlit display logic and does not need to know Chroma, embeddings, prompt internals, or provider-specific LLM details.
+
+Do not put low-level retrieval algorithms or provider-specific HTTP request code in `src/assistant.py`; keep those in retrieval and LLM modules.
+
 Recommended Phase 3 flow:
 
 ```text
