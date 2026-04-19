@@ -91,6 +91,10 @@ generate LLM answer
 return structured response
 ```
 
+`src/assistant.py` is the public assistant service boundary for the app. Its purpose is to expose a small, stable function such as `answer_question(...)` that coordinates retrieval, prompt building, LLM generation, and response-status mapping. This keeps `app.py` focused on Streamlit UI work and prevents UI code from depending on Chroma, embeddings, prompt internals, or provider-specific LLM details.
+
+`src/assistant.py` should not become a place for low-level retrieval algorithms or provider-specific HTTP logic. Those responsibilities stay in modules such as `src/query.py`, `src/rag_pipeline.py`, and `src/llm.py`.
+
 The retrieval result should be structured from the beginning instead of returning only raw documents or a plain context string. The first version can include:
 
 - `question`
