@@ -63,7 +63,7 @@ The project currently delivers a solid Phase 2 retrieval pipeline and a pre-LLM 
 - run retrieval queries against that store
 - format retrieved chunks into prompt-ready context with stable source labels
 
-It does **not** yet include a Streamlit UI or final answer generation from an LLM.
+It now includes the Phase 3 assistant boundary and a thin Streamlit UI. If no LLM is configured, the app still runs in retrieval-only mode and shows sources, retrieved context, and the prompt that would be sent to an LLM.
 
 ## Phase 3 Direction
 
@@ -180,13 +180,14 @@ Implemented now:
 - stable `chunk_id` identity from chunking to storage to display
 - query input guardrails
 - prompt-ready context orchestration in `src.rag_pipeline`
+- structured response objects in `src.schemas`
+- LLM provider boundary in `src.llm`
+- assistant orchestration boundary in `src.assistant`
+- Streamlit chat UI in `app.py`
 
 Not implemented yet:
 
-- `app.py` / Streamlit UI
-- LLM answer generation
-- structured assistant response objects
-- retrieval trace for the UI
+- production-ready LLM configuration examples
 - hybrid local + web retrieval
 
 ## Project Structure
@@ -198,6 +199,7 @@ RAG-knowledge-assistant/
 ├── pyproject.toml
 ├── requirements.txt
 ├── uv.lock
+├── app.py
 ├── data/
 │   ├── fjordmat/
 │   ├── nordvik/
@@ -205,13 +207,16 @@ RAG-knowledge-assistant/
 │   └── spareklar/
 ├── src/
 │   ├── __init__.py
+│   ├── assistant.py
 │   ├── chunking.py
 │   ├── config.py
 │   ├── data_loader.py
 │   ├── embeddings.py
 │   ├── indexing.py
+│   ├── llm.py
 │   ├── query.py
 │   ├── rag_pipeline.py
+│   ├── schemas.py
 │   └── vectorstore.py
 └── vectorstore/
 ```
@@ -352,6 +357,51 @@ Run the demo pipeline:
 uv run python -m src.rag_pipeline
 ```
 
+Run the Streamlit assistant:
+
+```bash
+uv run streamlit run app.py
+```
+
+## LLM Configuration
+
+LLM settings are loaded from a local `.env` file. Do not commit real API keys. Use `.env.example` as the template.
+
+The Streamlit sidebar shows:
+
+- `Retrieval only`
+- configured LLM providers that have API keys in `.env`
+
+If no provider key is configured, the app still works in retrieval-only mode and shows retrieved sources, context, and prompt trace.
+
+Generic provider configuration:
+
+```bash
+LLM_LABEL=Custom OpenAI-compatible
+LLM_PROVIDER=openai_compatible
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_API_KEY=your_api_key_here
+LLM_MODEL=gpt-4o-mini
+```
+
+OpenAI shortcut:
+
+```bash
+OPENAI_API_KEY=your_api_key_here
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
+```
+
+Anthropic shortcut:
+
+```bash
+ANTHROPIC_API_KEY=your_api_key_here
+ANTHROPIC_BASE_URL=https://api.anthropic.com/v1
+ANTHROPIC_MODEL=claude-3-5-sonnet-latest
+```
+
+The provider value describes the API protocol, not the company brand. For example, a MiniMax or enterprise gateway that follows OpenAI Chat Completions should use `LLM_PROVIDER=openai_compatible` with its own `LLM_BASE_URL`.
+
 Use `uv run ...` so the declared dependencies are available. Do not assume plain `python3 -m src.rag_pipeline` has the right environment unless you installed dependencies into that interpreter separately.
 
 ## What The Demo Currently Prints
@@ -397,9 +447,8 @@ Query guardrails also fail early with clear errors for:
 
 ## Limitations Right Now
 
-- no final LLM answer generation
-- no UI
-- no client filter in a frontend
+- LLM generation requires `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL`/configured model values
+- without LLM configuration, the app intentionally falls back to retrieval-only mode
 - no hybrid local + web retrieval
 - no incremental indexing
 - retrieval quality is solid for the demo, but still has room for ranking improvements
@@ -408,13 +457,10 @@ Query guardrails also fail early with clear errors for:
 
 The most natural next steps from the current codebase are:
 
-1. add structured response objects for retrieved context and assistant answers
-2. add an LLM generation module with graceful fallback when no API key is configured
-3. add an assistant orchestration layer so `app.py` stays thin
-4. add `app.py` with a Streamlit chat interface
-5. show answer text, source citations, and retrieval trace
-6. add client filtering in the UI
-7. later upgrade retrieval with query planning, reranking, and evidence checks
+1. add concrete `.env` examples for OpenAI-compatible and Anthropic providers
+2. test the Streamlit app with a real LLM provider
+3. improve the retrieval trace display if needed after UI review
+4. later upgrade retrieval with query planning, reranking, and evidence checks
 
 ## Notes
 

@@ -23,10 +23,12 @@ A marketing agency manages dozens of clients, each with brand guidelines, campai
 | Vector DB | ChromaDB | Simple (pip install, no server), good for demos |
 | Embeddings | paraphrase-multilingual-MiniLM-L12-v2 | Runs locally, free, good Norwegian support |
 | UI | Streamlit | Quick to build, clean chat interface, easy to demo |
-| LLM | TBD | Needed for the Streamlit app (Phase 3) |
+| LLM | OpenAI-compatible or Anthropic provider boundary | Optional for generation; retrieval-only fallback works without a key |
 | Language | Python | Everything in Python |
 
 **Key design decision:** No API keys required for the core pipeline (embeddings + vector store run locally). This means anyone can clone and test the retrieval without paying for anything. The LLM is the only component that may need an API key.
+
+LLM API keys belong in a local `.env` file and must not be committed. The UI should show only LLM providers that have API keys configured, plus a retrieval-only option. Use `.env.example` as the public template.
 
 ## Project Structure
 
@@ -38,6 +40,7 @@ RAG-knowledge-assistant/
 ├── uv.lock                # Locked dependency set for uv
 ├── requirements.txt       # Compatibility dependency list
 ├── .gitignore             # Excludes envs/ and vectorstore/
+├── app.py                 # Thin Streamlit chat UI
 ├── data/                  # Fictional client documents (Norwegian, markdown)
 │   ├── fjordmat/          # Restaurant chain (4 docs)
 │   ├── spareklar/         # Fintech/spare-app (4 docs)
@@ -45,15 +48,17 @@ RAG-knowledge-assistant/
 │   └── skytjenester/      # B2B SaaS company (4 docs)
 ├── src/
 │   ├── __init__.py
+│   ├── assistant.py       # UI-facing assistant orchestration boundary
 │   ├── data_loader.py     # Loads markdown documents and attaches metadata
 │   ├── chunking.py        # Splits documents into retrieval chunks
 │   ├── embeddings.py      # Creates the embedding model
 │   ├── vectorstore.py     # Chroma create/load operations
 │   ├── indexing.py        # Orchestration for indexing documents into Chroma
+│   ├── llm.py             # LLM provider boundary
 │   ├── query.py           # Retrieval/query logic against the vector store
+│   ├── schemas.py         # Structured assistant response objects
 │   └── rag_pipeline.py    # Compatibility entry point that wires indexing + query
-├── vectorstore/           # Generated persisted Chroma data (gitignored)
-└── app.py                 # Streamlit UI (not built in this repo state)
+└── vectorstore/           # Generated persisted Chroma data (gitignored)
 ```
 
 ## The Fictional Clients
@@ -84,13 +89,13 @@ All documents are written in Norwegian and contain realistic details — budgets
 
 ### Phase 3: LLM + Streamlit UI
 - Chat interface where users ask questions about clients
-- LLM generates answers based on retrieved chunks
+- LLM generates answers based on retrieved chunks when configured
+- Retrieval-only fallback works when no LLM key is configured
 - Show source documents with each answer
 - Show retrieval trace so the demo explains how the answer was grounded
 - Client filter in sidebar
 - Keep `app.py` thin: UI only, no direct Chroma/vectorstore/prompt orchestration logic
 - Add structured response objects so retrieval and answer generation can evolve without changing the UI contract
-- **LLM choice not yet decided** — options: OpenAI-compatible API, Anthropic, or local model
 
 ### Phase 3 Architecture Rules
 - `app.py` should only handle Streamlit layout, session state, user input, and display.
@@ -193,7 +198,7 @@ uv sync
 # Run the modular pipeline entry point
 uv run python -m src.rag_pipeline
 
-# Run the app (Phase 3, when built)
+# Run the app
 uv run streamlit run app.py
 ```
 
