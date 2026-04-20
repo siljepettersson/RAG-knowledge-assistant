@@ -2,13 +2,13 @@
 
 This repository is a RAG project for an internal client knowledge assistant at a marketing agency. Agency employees can search client material such as brand guidelines, campaign briefs, reports, and strategy documents and retrieve relevant source-backed context.
 
-The project started as a compact proof of concept, but the current direction is to turn the baseline retrieval pipeline into a usable assistant with a Streamlit chat UI, LLM-generated answers, source citations, and an architecture that can later support more advanced retrieval behavior.
+The project started as a compact proof of concept. It now includes a usable Streamlit assistant on top of the baseline retrieval pipeline, with source citations, retrieval trace, optional LLM-generated answers, and an architecture that can later support more advanced retrieval behavior.
 
 ![RAG pipeline flow](assets/rag-pipeline-flow.png)
 
 RAG flow: prepare knowledge documents, split them into chunks, convert those chunks into embeddings, store the vector representations with their text and metadata, retrieve the most relevant chunks for a user query, and use the retrieved context for answer generation.
 
-The current baseline uses a local embedding model for vector search. The LLM will be added in the answer-generation layer first, not as a replacement for embeddings. Later, the LLM can also help with retrieval planning, query rewriting, reranking, and evidence checks.
+The current baseline uses a local embedding model for vector search. The LLM is connected in the answer-generation layer, not as a replacement for embeddings. Later, the LLM can also help with retrieval planning, query rewriting, reranking, and evidence checks.
 
 ## Workflow Explained
 
@@ -54,7 +54,7 @@ Common memory types include:
 
 Memory is not implemented in this project yet, but it is part of the larger target architecture shown in the diagram.
 
-The project currently delivers a solid Phase 2 retrieval pipeline and a pre-LLM orchestration layer. It can:
+The project currently delivers a working retrieval pipeline, assistant orchestration layer, and Streamlit UI. It can:
 
 - load fictional client documents from `data/`
 - split them into retrieval chunks
@@ -62,34 +62,39 @@ The project currently delivers a solid Phase 2 retrieval pipeline and a pre-LLM 
 - rebuild a Chroma vector store from a clean state
 - run retrieval queries against that store
 - format retrieved chunks into prompt-ready context with stable source labels
+- answer through a thin Streamlit chat UI
+- show sources, retrieved context, prompt, model, and errors in a retrieval trace
+- run in retrieval-only mode without any LLM API key
+- call OpenAI-compatible or Anthropic LLM providers when configured in `.env`
+- let the user choose between `Retrieval only` and configured LLM providers in the UI sidebar
 
-It now includes the Phase 3 assistant boundary and a thin Streamlit UI. If no LLM is configured, the app still runs in retrieval-only mode and shows sources, retrieved context, and the prompt that would be sent to an LLM.
+## Current Integration Level
 
-## Phase 3 Direction
-
-The next phase is to add the user-facing assistant layer while keeping the code ready for more advanced retrieval later.
-
-The main design rule for Phase 3:
-
-- `app.py` should stay thin and only handle UI concerns
-- retrieval, prompt construction, LLM calls, source formatting, and response objects should live in `src/`
-- the app should display answers, source citations, and a retrieval trace, but it should not know Chroma or embedding details
-
-Planned Phase 3 structure:
+The project is connected end to end at the Phase 3 level:
 
 ```text
 app.py
     ↓
 src.assistant.answer_question(...)
     ↓
-retrieve context
+src.query.query(...)
     ↓
-build prompt
+src.rag_pipeline.build_prompt(...)
     ↓
-generate LLM answer
+src.llm.generate_answer(...)
     ↓
-return structured response
+AssistantResponse
 ```
+
+What is fully wired now:
+
+- `app.py` should stay thin and only handle UI concerns
+- `src/assistant.py` coordinates retrieval, prompt construction, LLM generation, and response-status mapping
+- `src/query.py` performs vector retrieval against Chroma
+- `src/rag_pipeline.py` formats source labels, retrieved context, and prompts
+- `src/llm.py` handles provider-specific LLM calls through one `generate_answer(...)` entrypoint
+- `src/schemas.py` defines the structured response objects used by the UI
+- `.env` controls which LLM providers appear in the sidebar
 
 `src/assistant.py` is the public assistant service boundary for the app. Its purpose is to expose a small, stable function such as `answer_question(...)` that coordinates retrieval, prompt building, LLM generation, and response-status mapping. This keeps `app.py` focused on Streamlit UI work and prevents UI code from depending on Chroma, embeddings, prompt internals, or provider-specific LLM details.
 
@@ -184,11 +189,15 @@ Implemented now:
 - LLM provider boundary in `src.llm`
 - assistant orchestration boundary in `src.assistant`
 - Streamlit chat UI in `app.py`
+- `.env`-based LLM provider selection
+- retrieval-only fallback when no LLM is selected or configured
+- Anthropic generation path tested with a real provider key
+- direct `Retrieval only` mode and `answered` mode tested through the assistant path
 
 Not implemented yet:
 
-- production-ready LLM configuration examples
 - hybrid local + web retrieval
+- relevance threshold / evidence sufficiency checks for weak retrieval results
 
 ## Project Structure
 
@@ -314,20 +323,20 @@ This is intentional. The current project is a full rebuild pipeline, not an incr
 
 ### 6. Build Prompt-Ready Context
 
-`src/rag_pipeline.py` currently acts as the Phase 2 demo entrypoint and includes a lightweight pre-LLM orchestration layer:
+`src/rag_pipeline.py` acts as the pipeline demo entrypoint and provides reusable formatting helpers:
 
 - `format_source_label(...)`
 - `format_source_list(...)`
 - `format_retrieved_context(...)`
 - `build_prompt(...)`
 
-This means the pipeline already produces:
+This means the pipeline produces:
 
 - retrieved sources
 - a prompt-ready context block
-- a final prompt string ready to send to an LLM
+- a final prompt string that can be sent to an LLM
 
-It does **not** call an LLM yet.
+The Streamlit app calls the LLM through `src.assistant` and `src.llm`, not directly from `src/rag_pipeline.py`.
 
 ## Stable Chunk Identity
 
@@ -397,7 +406,7 @@ Anthropic shortcut:
 ```bash
 ANTHROPIC_API_KEY=your_api_key_here
 ANTHROPIC_BASE_URL=https://api.anthropic.com/v1
-ANTHROPIC_MODEL=claude-3-5-sonnet-latest
+ANTHROPIC_MODEL=claude-haiku-4-5
 ```
 
 The provider value describes the API protocol, not the company brand. For example, a MiniMax or enterprise gateway that follows OpenAI Chat Completions should use `LLM_PROVIDER=openai_compatible` with its own `LLM_BASE_URL`.
@@ -447,8 +456,9 @@ Query guardrails also fail early with clear errors for:
 
 ## Limitations Right Now
 
-- LLM generation requires `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL`/configured model values
+- LLM generation requires one configured provider in `.env`
 - without LLM configuration, the app intentionally falls back to retrieval-only mode
+- `no_results` is difficult to trigger naturally because baseline vector search returns top-k chunks even for weakly related questions
 - no hybrid local + web retrieval
 - no incremental indexing
 - retrieval quality is solid for the demo, but still has room for ranking improvements
@@ -457,10 +467,10 @@ Query guardrails also fail early with clear errors for:
 
 The most natural next steps from the current codebase are:
 
-1. add concrete `.env` examples for OpenAI-compatible and Anthropic providers
-2. test the Streamlit app with a real LLM provider
-3. improve the retrieval trace display if needed after UI review
-4. later upgrade retrieval with query planning, reranking, and evidence checks
+1. improve the retrieval trace display if needed after UI review
+2. add relevance thresholds or evidence sufficiency checks
+3. later upgrade retrieval with query planning, reranking, and multi-hop retrieval
+4. optionally add a lightweight evaluation set for known client questions
 
 ## Notes
 
